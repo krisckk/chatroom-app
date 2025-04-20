@@ -81,7 +81,7 @@ const ProfileEdit = () => {
         e.preventDefault();
         try {
         await setDoc(doc(db, 'profiles', uid), {
-            displayName,
+            displayName: user.displayName,
             photoData,
             bio
         });

@@ -1,0 +1,67 @@
+.friends-container {
+    flex-shrink: 0;
+    width: 240px;
+    background-color: #242424;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 8px;
+  }
+  
+  .friends-header {
+    padding: 8px 12px;
+    font-size: 1.1rem;
+    color: #eee;
+    border-bottom: 1px solid #333;
+  }
+  
+  .add-friend-form {
+    display: flex;
+    padding: 8px;
+  }
+  
+  .add-friend-form input {
+    flex: 1;
+    padding: 6px;
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #444;
+    background: #1e1e1e;
+    color: #eee;
+  }
+  
+  .add-friend-form button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    background: #388e3c;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  .error {
+    color: #f44336;
+    text-align: center;
+    margin: 4px 0;
+  }
+  
+  .friends-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .friend-item {
+    padding: 10px 12px;
+    color: #ccc;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  
+  .friend-item:hover {
+    background-color: #333;
+    color: #fff;
+  }
+  

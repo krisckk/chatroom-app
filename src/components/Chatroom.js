@@ -1,88 +1,92 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { FaPaperPlane } from 'react-icons/fa';
-import { FaTrash } from 'react-icons/fa';
+import { FaPaperPlane, FaTrash } from 'react-icons/fa';
+import FriendsList from './FriendsList';
 import './Chatroom.css';
 
 const Message = ({ msg, isCurrentUser, onDelete }) => (
     <div className={`message ${isCurrentUser ? 'sent' : 'received'}`}>
-      <span className="message-sender">{msg.displayName}</span>
-      <span className="message-text">{msg.text}</span>
-      {isCurrentUser && (
-        <button
-          className="delete-btn"
-          onClick={() => onDelete(msg.id)}
-          aria-label="Delete message"
-        >
-          <FaTrash />
-        </button>
-      )}
+        <span className="message-sender">{msg.displayName}</span>
+        <span className="message-text">{msg.text}</span>
+        {isCurrentUser && (
+            <button
+                className="delete-btn"
+                onClick={() => onDelete(msg.id)}
+                aria-label="Delete message"
+            >
+                <FaTrash />
+            </button>
+        )}
     </div>
-  );
+);
 
 const Chatroom = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [activeFriend, setActiveFriend] = useState(null);
     const scrollRef = useRef();
     const navigate = useNavigate();
 
+    // Whenever activeFriend changes, re‑subscribe to that chat
     useEffect(() => {
-        if(!auth.currentUser){
-            console.warn("No authenticated user found in Chatroom component");
+        setMessages([]);
+        if (!activeFriend) return; // No friend selected
+
+        setLoading(true);
+        const me = auth.currentUser.uid;
+        // Build a stable participants array
+        const participants = [me, activeFriend].sort();
+
+        const q = query(
+            collection(db, 'messages'),
+            where('participants', '==', participants),
+            orderBy('createdAt')
+        );
+
+        const unsubscribe = onSnapshot(
+        q,
+        snap => {
+            setMessages(snap.docs.map(d => ({ ...d.data(), id: d.id })));
             setLoading(false);
-            return () => {};
-        }
-        const q = query(collection(db, 'messages'), orderBy('createdAt'));
-        try {
-            const unsubscribe = onSnapshot(
-                q,
-                (snapshot) => {
-                    setMessages(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-                    setLoading(false);
-                    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-                },
-                (error) => {
-                    console.error("Error fetching messages: ", error);
-                    setLoading(false);
-                }
-            );
-            
-            return unsubscribe;
-        } 
-        catch (error) {
-            console.error("Error setting up snapshot listener:", error);
+            scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+        },
+        err => {
+            console.error('Error loading chat:', err);
             setLoading(false);
-            return () => {};
         }
-    }, []);
+        );
+
+        return unsubscribe;
+    }, [activeFriend]);
 
     const sendMessage = async (e) => {
         e.preventDefault();
-        if (newMessage.trim() === "") return;
-
-        setNewMessage('');
-        console.log('Input cleared - before Firebase operation');
-
-        if(!auth.currentUser){
-            console.warn("No authenticated user found in sendMessage function");
+        const text = newMessage.trim();
+        if(!activeFriend){
+            alert("Please select a friend to chat with first");
             return;
         }
-        
+        if (text === "") return;
+
+        const me = auth.currentUser;
+        const participants = [me.uid, activeFriend].sort();
+
         try {
             await addDoc(collection(db, 'messages'), {
-                text: newMessage.trim(),
+                text,
                 createdAt: serverTimestamp(),
-                uid: auth.currentUser.uid,
-                displayName: auth.currentUser.displayName || 'Anonymous',
+                uid: me.uid,
+                displayName: me.displayName || 'Anonymous',
+                participants,
+                receiverId: activeFriend,
             });
             setNewMessage('');
-            console.log("Message sent successfully");
-        } 
-        catch (error) {
-            console.error("Error sending message: ", error);
+        }
+        catch(err){
+            console.error("Error sending message: ", err);
         }
     };
 
@@ -97,52 +101,53 @@ const Chatroom = () => {
     };
 
     return (
-        <div className="chat-container">
-            <div className="chat-header">
-                Chatroom
-                <button
-                    className="profile-btn"
-                    onClick={() => navigate('/profile')}
-                >
-                    Profile
-                </button>
-                <button 
-                    className="signout-btn" 
-                    onClick={() => auth.signOut()}
-                >
-                    Sign Out
-                </button>
-            </div>
-            
-            <div className="chat-messages">
-                {loading ? (
-                    <div className="loading"></div>
-                ) : (
-                    messages.map(msg => (
-                        <Message
-                            key={msg.id}
-                            msg={msg}
-                            isCurrentUser={msg.uid === auth.currentUser.uid}
-                            onDelete={deleteMessage}
-                        />
-                    ))
-                )}
-                <div ref={scrollRef} />
-            </div>
-            <form className="chat-input-form" onSubmit={sendMessage}>
-                <div className='input-wrapper'>
-                    <input
-                        className="chat-input"
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        placeholder="Write a message..."
-                        aria-label="Message input"
-                    />
-                    <button type="submit" className="send-btn" aria-label="Send message">
-                        <FaPaperPlane />
-                    </button>
+        <div className='chat-app-container'>
+            <FriendsList onSelect={setActiveFriend} />
+            <div className="chat-container">
+                <div className="chat-header">
+                    {activeFriend ? `Chat with ${activeFriend}` : 'Select a friend to start chatting'}
+                    <div className='header-buttons'>
+                        <button className='profile-btn' onClick={() => navigate('/profile')}>Profile</button>
+                        <button className='signout-btn' onClick={() => auth.signOut()}>Sign Out</button>
+                    </div>
                 </div>
-            </form>
+                
+                <div className="chat-messages">
+                    {loading && <div className="loading">Loading…</div>}
+                    {!loading && activeFriend &&
+                        messages.map(msg => (
+                            <Message
+                                key={msg.id}
+                                msg={msg}
+                                isCurrentUser={msg.uid === auth.currentUser.uid}
+                                onDelete={deleteMessage}
+                            />
+                        ))}
+                    <div ref={scrollRef} />
+                </div>
+
+                <form className="chat-input-form" onSubmit={sendMessage}>
+                    <div className='input-wrapper'>
+                        <input
+                            className="chat-input"
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            placeholder={
+                                activeFriend ? 'Type a message...' : 'Select a friend to chat...'
+                            }
+                            aria-label="Message input"
+                        />
+                        <button 
+                            type="submit" 
+                            className="send-btn" 
+                            aria-label="Send message"
+                            disabled={!activeFriend || !newMessage.trim()}
+                        >
+                            <FaPaperPlane />
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };
