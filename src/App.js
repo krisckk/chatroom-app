@@ -1,24 +1,39 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import SignIn from './components/Signin';
+import SignUp from  './components/Signup';
+import Chatroom from './components/Chatroom';
+import ProfileView from './components/ProfileView';
+import ProfileEdit from './components/ProfileEdit';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged(u => {
+      setUser(u);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  if (loading) {
+    return <div style={{ textAlign: 'center' }}>Loading...</div>;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/chat" /> : <SignIn />} />
+        <Route path="/chat" element={user ? <Chatroom /> : <Navigate to="/" />} />
+        <Route path="signup" element={user ? <Navigate to="/chat" /> : <SignUp />} /> {/* ← new */}
+        <Route path="/profile" element={user ? <ProfileView /> : <Navigate to="/" />} />
+        <Route path="/profile/edit" element={user ? <ProfileEdit /> : <Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

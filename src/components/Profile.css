@@ -1,0 +1,95 @@
+/* src/components/Profile.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+
+.profile-container {
+  width: 360px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #242424;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  font-family: 'Roboto', sans-serif;
+  color: #eee;
+}
+
+.profile-container h2 {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #fff;
+}
+
+.profile-form label {
+  display: block;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.profile-form input[type="text"],
+.profile-form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 6px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #eee;
+}
+
+.profile-form input[type="file"] {
+  margin-top: 6px;
+  color: #eee;
+}
+
+.profile-form textarea {
+  resize: vertical;
+  height: 80px;
+}
+
+.profile-preview {
+  display: block;
+  margin: 10px auto 20px;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #444;
+}
+
+.profile-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.cancel-btn,
+.save-btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+}
+
+.cancel-btn {
+  background-color: #757575;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+.cancel-btn:hover {
+  background-color: #616161;
+}
+
+.save-btn {
+  background-color: #388e3c;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+.save-btn:hover {
+  background-color: #2e7d32;
+}
+
+.error {
+  color: #f44336;
+  margin-bottom: 15px;
+  text-align: center;
+}

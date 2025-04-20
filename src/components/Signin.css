@@ -1,0 +1,124 @@
+/* src/components/SignIn.css */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
+
+.signin-container {
+  width: 320px;
+  margin: 10vh auto;
+  padding: 30px;
+  text-align: center;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+  font-family: 'Roboto', sans-serif;
+  color: #eee;
+}
+
+.signin-container h2 {
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+@media (max-width: 400px){
+  .chat-container{
+    width: 100vw;
+    border-radius: 0;
+    margin: 0;
+  }
+}
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+}
+
+.google-btn { background: #db4437; }
+.github-btn { background: #333; }
+.email-btn  { background: #388e3c; }
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #2a2a2a;
+  color: #eee;
+}
+
+input::placeholder {
+  color: #777;
+}
+
+.divider {
+  margin: 10px 0;
+  color: #777;
+}
+
+.password-label {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  margin-top: 10px;
+  color: #eee;
+}
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* Room for the icon */
+}
+
+.toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-btn:hover {
+  color: #fff;
+}
+
+.error {
+  color: #f44336;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.footer {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.link-btn {
+  color: #4caf50;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
