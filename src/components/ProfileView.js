@@ -5,12 +5,12 @@ import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import './Profile.css';
 
-const ProfileView = () => {
+export default function ProfileView() {
   const navigate = useNavigate();
   const user = auth.currentUser;
   const uid = user?.uid;
 
-  const [profile, setProfile] = useState({
+  const [userProfile, setUserProfile] = useState({
     displayName: '',
     photoData: '',
     bio: ''
@@ -22,12 +22,12 @@ const ProfileView = () => {
     if (!uid) return navigate('/');
     (async () => {
       try {
-        const snap = await getDoc(doc(db, 'profiles', uid));
-        if (snap.exists()) setProfile(snap.data());
+        const snap = await getDoc(doc(db, 'users', uid));
+        if (snap.exists()) setUserProfile(snap.data());
       } 
       catch (e) {
         console.error(e);
-        setError('Failed to load profile.');
+        setError('Failed to load user profile.');
       } 
       finally {
         setLoading(false);
@@ -48,16 +48,16 @@ const ProfileView = () => {
       <h2>Your Profile</h2>
       {error && <div className="error">{error}</div>}
 
-      {profile.photoData && (
+      {userProfile.photoData && (
         <img
           className="profile-preview"
-          src={profile.photoData}
+          src={userProfile.photoData}
           alt="Profile"
         />
       )}
 
-      <p><strong>Name:</strong> {profile.displayName}</p>
-      <p><strong>Bio:</strong> {profile.bio}</p>
+      <p><strong>Name:</strong> {userProfile.displayName}</p>
+      <p><strong>Bio:</strong> {userProfile.bio}</p>
 
       <div className="profile-buttons">
         <button
@@ -75,5 +75,4 @@ const ProfileView = () => {
       </div>
     </div>
   );
-}
-export default ProfileView;
+} 

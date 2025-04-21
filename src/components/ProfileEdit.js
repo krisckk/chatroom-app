@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { updateProfile} from 'firebase/auth';
 import './Profile.css';
 
-const ProfileEdit = () => {
+export default function ProfileEdit() {
     const navigate = useNavigate();
     const user = auth.currentUser;
     const uid = user?.uid;
 
-    const [displayName, setDisplayName] = useState(user?.displayName || '');
+    const [displayName, setDisplayName] = useState('');
     const [photoData, setPhotoData]     = useState('');
     const [bio, setBio]                 = useState('');
     const [error, setError]             = useState('');
@@ -21,10 +22,10 @@ const ProfileEdit = () => {
         try {
             const snap = await getDoc(doc(db, 'profiles', uid));
             if (snap.exists()) {
-            const d = snap.data();
-            setDisplayName(d.displayName || '');
-            setPhotoData(d.photoData || '');
-            setBio(d.bio || '');
+                const d = snap.data();
+                setDisplayName(d.displayName || '');
+                setPhotoData(d.photoData || '');
+                setBio(d.bio || '');
             }
         }
         catch (e) {
@@ -37,7 +38,7 @@ const ProfileEdit = () => {
     const handleFileChange = e => {
         const file = e.target.files[0];
         if (!file) return;
-  
+
         const reader = new FileReader();
         reader.onload = event => {
             const img = new Image();
@@ -79,13 +80,20 @@ const ProfileEdit = () => {
 
     const handleSave = async e => {
         e.preventDefault();
+
+        await updateProfile(user, { 
+            displayName,
+            photoData: photoData ? photoData : undefined
+        });
+
         try {
-            await setDoc(doc(db, 'profiles', uid), {
+            await setDoc(doc(db, 'users', uid), {
                 displayName: user.displayName,
                 email: user.email,
                 photoData,
                 bio
             });
+            console.log(displayName);
             navigate('/profile');
         } 
         catch (e) {
@@ -152,5 +160,3 @@ const ProfileEdit = () => {
         </div>
     );
 }
-
-export default ProfileEdit;

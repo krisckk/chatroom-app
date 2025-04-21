@@ -29,27 +29,31 @@ const Chatroom = () => {
     const [activeFriend, setActiveFriend] = useState(null);
     const scrollRef = useRef();
     const navigate = useNavigate();
+    const meUID = auth.currentUser.uid;
 
     // Whenever activeFriend changes, re‑subscribe to that chat
     useEffect(() => {
-        setMessages([]);
-        if (!activeFriend) return; // No friend selected
+        if (!activeFriend) {
+            setMessages([]);
+            return;
+        }
 
         setLoading(true);
-        const me = auth.currentUser.uid;
         // Build a stable participants array
-        const participants = [me, activeFriend].sort();
+        const friendUID = activeFriend.uid;
+        const conversationID = [meUID, friendUID].sort().join('_');
+        const participants = [meUID, activeFriend].sort();
 
         const q = query(
             collection(db, 'messages'),
-            where('participants', '==', participants),
+            where('conversationID', '==', conversationID),
             orderBy('createdAt')
         );
 
         const unsubscribe = onSnapshot(
         q,
         snap => {
-            setMessages(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+            setMessages(snap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
             setLoading(false);
             scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
         },
@@ -60,28 +64,29 @@ const Chatroom = () => {
         );
 
         return unsubscribe;
-    }, [activeFriend]);
+    }, [activeFriend, meUID]);
 
     const sendMessage = async (e) => {
         e.preventDefault();
-        const text = newMessage.trim();
         if(!activeFriend){
-            alert("Please select a friend to chat with first");
+            alert('Please sleect a friend first');
             return;
         }
-        if (text === "") return;
+        const text = newMessage.trim();
+        if(!text) return;
 
-        const me = auth.currentUser;
-        const participants = [me.uid, activeFriend].sort();
+        const  friendUID = activeFriend.uid;
+        const conversationID = [meUID, friendUID].sort().join('_');
+        const participants = [meUID, activeFriend].sort();
 
         try {
             await addDoc(collection(db, 'messages'), {
                 text,
                 createdAt: serverTimestamp(),
-                uid: me.uid,
-                displayName: me.displayName || 'Anonymous',
-                participants,
-                receiverId: activeFriend,
+                uid: meUID,
+                displayName: auth.currentUser.displayName || 'Anonymous',
+                receiverId: friendUID,
+                conversationID
             });
             setNewMessage('');
         }

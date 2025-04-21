@@ -3,10 +3,9 @@ import { collection, query, where, getDocs, onSnapshot, doc, setDoc } from 'fire
 import { db, auth } from '../firebase';
 import './FriendsList.css'
 
-const FriendsList = (onSelect) => {
+export default function FriendsList({onSelect = () => {} }) {
     const me = auth.currentUser.uid;
     const [friends, setFriends]     = useState([]);
-    const [emailInput, setEmailInput] = useState('');
     const [nameInput, setNameInput]   = useState('');
     const [error, setError]         = useState('');
 
@@ -15,6 +14,9 @@ const FriendsList = (onSelect) => {
         const friendsCol = collection(db, 'users', me, 'friends');
         const unsub = onSnapshot(friendsCol, snap => {
             setFriends(snap.docs.map(d => d.data()));
+        },
+        err => {
+          console.error("Error loading friends:", err);
         });
         return unsub;
       }, [me]);
@@ -22,36 +24,42 @@ const FriendsList = (onSelect) => {
     const addFriend = async e => {
         e.preventDefault();
         setError('');
+        const username = nameInput.trim();
     
         try {
             // 1. find user by displayName
             const usersQ = query(
                 collection(db, 'users'),
-                where('displayName', '==', nameInput.trim())
+                where('displayName', '==', username)
             );
             const userSnap = await getDocs(usersQ);
             if (userSnap.empty) {
                 setError('No user found with that name.');
                 return;
             }
+            const userDoc = userSnap.docs[0];
+            const friendUID = userDoc.id;
+            const friendData = { UID: friendUID, displayName: userDoc.data().displayName, email: userDoc.data().email, photoData: userDoc.data().photoData };
         
-            const friendDoc  = userSnap.docs[0];
-            const friendData = { uid: friendDoc.id, ...friendDoc.data() };
-        
-            if (friendData.uid === me) {
+            if (friendUID === me) {
                 setError("You can't add yourself.");
                 return;
             }
         
             // 2. write into your subcollection
+            await setDoc(doc(db, 'users', me, 'friends', friendUID), friendData);
             await setDoc(
-                doc(db, 'users', me, 'friends', friendData.uid),
-                friendData
+                doc(db, 'users', friendUID, 'friends', me), {
+                  UID: me,
+                  displayName: auth.currentUser.displayName,
+                  email: auth.currentUser.email,
+                  photoData: auth.currentUser.photoData
+                }
             );
             setNameInput('');
         } 
         catch (err) {
-            console.error(err);
+            console.error('Error adding friend', err);
             setError('Failed to add friend.');
         }
       };
@@ -64,8 +72,8 @@ const FriendsList = (onSelect) => {
             <input
               type="text"
               placeholder="Friend's username"
-              value={emailInput}
-              onChange={e => setEmailInput(e.target.value)}
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
               required
             />
             <button type="submit">Add</button>
@@ -86,5 +94,3 @@ const FriendsList = (onSelect) => {
         </div>
       );
 };
-
-export default FriendsList;
