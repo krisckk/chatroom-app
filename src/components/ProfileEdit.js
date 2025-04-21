@@ -80,15 +80,17 @@ const ProfileEdit = () => {
     const handleSave = async e => {
         e.preventDefault();
         try {
-        await setDoc(doc(db, 'profiles', uid), {
-            displayName: user.displayName,
-            photoData,
-            bio
-        });
-        navigate('/profile');
-        } catch (e) {
-        console.error(e);
-        setError('Save failed.');
+            await setDoc(doc(db, 'profiles', uid), {
+                displayName: user.displayName,
+                email: user.email,
+                photoData,
+                bio
+            });
+            navigate('/profile');
+        } 
+        catch (e) {
+            console.error(e);
+            setError('Save failed.');
         }
     };
 

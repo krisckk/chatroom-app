@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { db, auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import SignIn from './components/Signin';
 import SignUp from  './components/Signup';
@@ -13,9 +14,15 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(u => {
-      setUser(u);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
       setLoading(false);
+      if(user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          displayName: user.displayName,
+          email: user.email,
+        }, { merge: true });
+      }
     });
     return unsub;
   }, []);
