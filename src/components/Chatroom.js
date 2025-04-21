@@ -69,14 +69,16 @@ export default function Chatroom() {
 
     const sendMessage = async (e) => {
         e.preventDefault();
+        console.log('Send button clicked');
         if(!friendUID){
-            alert('Please sleect a friend first');
+            alert('Please select a friend first');
             return;
         }
         const text = newMessage.trim();
         if(!text) return;
 
         const conversationId = [meUID, friendUID].sort().join('_');
+        console.log('Conversation ID:', conversationId);
 
         try {
             await addDoc(collection(db, 'messages'), {
@@ -88,6 +90,7 @@ export default function Chatroom() {
                 receiverId: friendUID,
                 conversationId
             });
+            console.log('Message sent successfully!');
             setNewMessage('');
         }
         catch(err){
@@ -111,7 +114,7 @@ export default function Chatroom() {
             <FriendsList onSelect={friend => setActiveFriend(friend)} />
             <div className="chat-container">
                 <div className="chat-header">
-                    {friendName ? `${friendName}}'s Chatroom` : 'Select a friend to start chatting'}
+                    {friendName ? `${friendName}'s Chatroom` : 'Select a friend to start chatting'}
                     <div className='header-buttons'>
                         <button className='profile-btn' onClick={() => navigate('/profile')}>Profile</button>
                         <button className='signout-btn' onClick={() => auth.signOut()}>Sign Out</button>
@@ -132,10 +135,13 @@ export default function Chatroom() {
                     <div ref={scrollRef} />
                 </div>
 
-                <form className="chat-input-form" onSubmit={sendMessage}>
+                <form className="chat-input-form" onSubmit={(e) => {
+                    console.log('Form submitted');
+                    sendMessage(e);
+                }}>
                     <div className='input-wrapper'>
                         <input
-                            tyoe="text"
+                            type="text"
                             className="chat-input"
                             value={newMessage}
                             onChange={e => setNewMessage(e.target.value)}
@@ -143,14 +149,12 @@ export default function Chatroom() {
                                 friendName ? 'Type a message...' : 'Select a friend to chat...'
                             }
                             aria-label="Message input"
-                            disabled={!friendUID}
                         />
                         <button 
                             type="submit" 
                             className="send-btn" 
                             aria-label="Send message"
                             disabled={!friendUID || !newMessage.trim()}
-                            onClick={sendMessage}
                         >
                             <FaPaperPlane />
                         </button>
