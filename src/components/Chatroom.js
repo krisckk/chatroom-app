@@ -22,7 +22,7 @@ const Message = ({ msg, isCurrentUser, onDelete }) => (
     </div>
 );
 
-const Chatroom = () => {
+export default function Chatroom() {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
@@ -30,30 +30,31 @@ const Chatroom = () => {
     const scrollRef = useRef();
     const navigate = useNavigate();
     const meUID = auth.currentUser.uid;
+    
+    // Derive friend UID and name
+    const friendUID = activeFriend?.uid;
+    const friendName = activeFriend?.displayName;
 
     // Whenever activeFriend changes, re‑subscribe to that chat
     useEffect(() => {
-        if (!activeFriend) {
+        if (!friendUID) {
             setMessages([]);
             return;
         }
-
         setLoading(true);
         // Build a stable participants array
-        const friendUID = activeFriend.uid;
-        const conversationID = [meUID, friendUID].sort().join('_');
-        const participants = [meUID, activeFriend].sort();
+        const conversationId = [meUID, friendUID].sort().join('_');
 
         const q = query(
             collection(db, 'messages'),
-            where('conversationID', '==', conversationID),
-            orderBy('createdAt')
+            where('conversationId', '==', conversationId),
+            orderBy('createdAt', 'asc')
         );
 
         const unsubscribe = onSnapshot(
         q,
         snap => {
-            setMessages(snap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+            setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             setLoading(false);
             scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
         },
@@ -64,20 +65,18 @@ const Chatroom = () => {
         );
 
         return unsubscribe;
-    }, [activeFriend, meUID]);
+    }, [friendUID, meUID]);
 
     const sendMessage = async (e) => {
         e.preventDefault();
-        if(!activeFriend){
+        if(!friendUID){
             alert('Please sleect a friend first');
             return;
         }
         const text = newMessage.trim();
         if(!text) return;
 
-        const  friendUID = activeFriend.uid;
-        const conversationID = [meUID, friendUID].sort().join('_');
-        const participants = [meUID, activeFriend].sort();
+        const conversationId = [meUID, friendUID].sort().join('_');
 
         try {
             await addDoc(collection(db, 'messages'), {
@@ -85,8 +84,9 @@ const Chatroom = () => {
                 createdAt: serverTimestamp(),
                 uid: meUID,
                 displayName: auth.currentUser.displayName || 'Anonymous',
+                senderId: meUID,
                 receiverId: friendUID,
-                conversationID
+                conversationId
             });
             setNewMessage('');
         }
@@ -95,7 +95,8 @@ const Chatroom = () => {
         }
     };
 
-    const deleteMessage = async id => {
+    const deleteMessage = async (id, senderId) => {
+        if(senderId !== meUID) return;
         if(!window.confirm("Delete this message?")) return;
         try {
             await deleteDoc(doc(db, 'messages', id));
@@ -107,10 +108,10 @@ const Chatroom = () => {
 
     return (
         <div className='chat-app-container'>
-            <FriendsList onSelect={setActiveFriend} />
+            <FriendsList onSelect={friend => setActiveFriend(friend)} />
             <div className="chat-container">
                 <div className="chat-header">
-                    {activeFriend ? `Chat with ${activeFriend}` : 'Select a friend to start chatting'}
+                    {friendName ? `${friendName}}'s Chatroom` : 'Select a friend to start chatting'}
                     <div className='header-buttons'>
                         <button className='profile-btn' onClick={() => navigate('/profile')}>Profile</button>
                         <button className='signout-btn' onClick={() => auth.signOut()}>Sign Out</button>
@@ -119,12 +120,12 @@ const Chatroom = () => {
                 
                 <div className="chat-messages">
                     {loading && <div className="loading">Loading…</div>}
-                    {!loading && activeFriend &&
+                    {!loading && friendUID &&
                         messages.map(msg => (
                             <Message
                                 key={msg.id}
                                 msg={msg}
-                                isCurrentUser={msg.uid === auth.currentUser.uid}
+                                isCurrentUser={msg.senderId === meUID}
                                 onDelete={deleteMessage}
                             />
                         ))}
@@ -134,19 +135,22 @@ const Chatroom = () => {
                 <form className="chat-input-form" onSubmit={sendMessage}>
                     <div className='input-wrapper'>
                         <input
+                            tyoe="text"
                             className="chat-input"
                             value={newMessage}
                             onChange={e => setNewMessage(e.target.value)}
                             placeholder={
-                                activeFriend ? 'Type a message...' : 'Select a friend to chat...'
+                                friendName ? 'Type a message...' : 'Select a friend to chat...'
                             }
                             aria-label="Message input"
+                            disabled={!friendUID}
                         />
                         <button 
                             type="submit" 
                             className="send-btn" 
                             aria-label="Send message"
-                            disabled={!activeFriend || !newMessage.trim()}
+                            disabled={!friendUID || !newMessage.trim()}
+                            onClick={sendMessage}
                         >
                             <FaPaperPlane />
                         </button>
@@ -155,6 +159,4 @@ const Chatroom = () => {
             </div>
         </div>
     );
-};
-
-export default Chatroom;
+}

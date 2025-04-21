@@ -85,7 +85,7 @@ export default function FriendsList({onSelect = () => {} }) {
               <li
                 key={f.uid}
                 className="friend-item"
-                onClick={() => onSelect(f.uid)}
+                onClick={() => onSelect(f)}
               >
                 {f.displayName}
               </li>
